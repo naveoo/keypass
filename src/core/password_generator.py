@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 from os import getenv
 
 load_dotenv()
-PASSWORD_MIN_SIZE = getenv("PASSWORD_MIN_SIZE")
-PASSWORD_MAX_SIZE = getenv("PASSWORD_MAX_SIZE")
+PASSWORD_MIN_SIZE = int(getenv("PASSWORD_MIN_SIZE"))
+PASSWORD_MAX_SIZE = int(getenv("PASSWORD_MAX_SIZE"))
 
 def build_readable_password(length:int):
     assert length >= PASSWORD_MIN_SIZE
@@ -18,8 +18,8 @@ def build_random_password(length:int, character_flags:list):
     assert length >= PASSWORD_MIN_SIZE
     assert length <= PASSWORD_MAX_SIZE
     assert len(character_flags) == 3
-    for i in range(len(character_flags)):
-        assert type(character_flags[i]) == bool
+    for flag in character_flags:
+        assert type(flag) == bool
     pool = ""
     if (character_flags[0]):
         pool += ascii_letters
@@ -33,6 +33,6 @@ def generate_password(length:int=PASSWORD_MIN_SIZE, character_flags:list=[True,T
     assert length >= PASSWORD_MIN_SIZE
     assert length <= PASSWORD_MAX_SIZE
     assert len(character_flags) == 3
-    for i in range(len(character_flags)):
-        assert type(character_flags[i]) == bool
+    for flag in character_flags:
+        assert type(flag) == bool
     return build_readable_password(length) if (readable) else build_random_password(length, character_flags)
