@@ -10,18 +10,6 @@ try:
 except (TypeError, ValueError) as e:
     raise RuntimeError(f"Error loading password size constraints from environment variables: {e}")
 
-def build_readable_password(length: int):
-    try:
-        assert length >= PASSWORD_MIN_SIZE, f"Password length must be at least {PASSWORD_MIN_SIZE}."
-        assert length <= PASSWORD_MAX_SIZE, f"Password length must not exceed {PASSWORD_MAX_SIZE}."
-        vowels = "aeiouyAEIOUY"
-        consonants = ''.join([c for c in ascii_letters if c not in vowels])
-        return ''.join(choice(vowels) if (i % 2 == 0) else choice(consonants) for i in range(length))
-    except AssertionError as e:
-        raise RuntimeError("Invalid password length for readable password.")
-    except Exception as e:
-        raise RuntimeError("An error occurred while building a readable password.")
-
 def build_random_password(length: int, character_flags: list):
     assert length >= PASSWORD_MIN_SIZE, f"Password length must be at least {PASSWORD_MIN_SIZE}."
     assert length <= PASSWORD_MAX_SIZE, f"Password length must not exceed {PASSWORD_MAX_SIZE}."
@@ -61,7 +49,6 @@ def generate_password(length: int = PASSWORD_MIN_SIZE, character_flags: list = [
         for flag in character_flags:
             assert isinstance(flag, bool), "Each character flag must be a boolean."
         
-        return build_readable_password(length) if readable else build_random_password(length, character_flags)
     except AssertionError as e:
         raise RuntimeError("Invalid input for password generation.")
     except Exception as e:

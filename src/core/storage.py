@@ -1,8 +1,10 @@
 import sqlite3
 from pathlib import Path
+from src.core.crypto import encrypt_password, decrypt_password
 
 class Database:
-    def __init__(self):
+    def __init__(self, derived_key: bytes):
+        self.key = derived_key
         BASE_DIR = Path(__file__).resolve().parent.parent
         self.DB_PATH = BASE_DIR / "db" / "database.db"
         self.PASSWORD_TABLE_NAME = "passwords"
@@ -22,8 +24,8 @@ class Database:
                 )
             """)
             self.conn.commit()
-        except sqlite3.Error as e:
-            raise RuntimeError("An error occurred while initializing the database.")
+        except sqlite3.Error:
+            raise RuntimeError("Une erreur est survenue lors de l'initialisation de la base de données.")
 
     def __del__(self):
         if hasattr(self, 'conn') and self.conn:
@@ -34,42 +36,60 @@ class Database:
             self.cursor.execute(f"SELECT application FROM {self.PASSWORD_TABLE_NAME}")
             rows = self.cursor.fetchall()
             return [row[0] for row in rows]
-        except sqlite3.Error as e:
-            raise RuntimeError("An error occurred while fetching applications.")
+        except sqlite3.Error:
+            raise RuntimeError("Erreur lors de la récupération des applications.")
 
     def get_info(self, application: str):
-        assert application != ""
         try:
             self.cursor.execute(f"""
                 SELECT userid, password FROM {self.PASSWORD_TABLE_NAME}
                 WHERE application = ?
             """, (application,))
             rows = self.cursor.fetchall()
-            return rows
-        except sqlite3.Error as e:
-            raise RuntimeError("An error occurred while fetching the information.")
+            return [(uid, decrypt_password(pwd, self.key)) for uid, pwd in rows]
+        except sqlite3.Error:
+            raise RuntimeError("Erreur lors de la récupération des informations.")
+        except Exception as e:
+            raise RuntimeError(f"Erreur de déchiffrement : {e}")
+
+    def get_users_for_application(self, application: str):
+        try:
+            self.cursor.execute(f"""
+                SELECT DISTINCT userid FROM {self.PASSWORD_TABLE_NAME} WHERE application = ?
+            """, (application,))
+            rows = self.cursor.fetchall()
+            return [row[0] for row in rows]  # Retourne la liste des utilisateurs pour cette application
+        except sqlite3.Error:
+            raise RuntimeError("Une erreur est survenue lors de la récupération des utilisateurs.")
 
     def insert(self, values: tuple):
-        for value in values:
-            assert type(value) == str
-            assert value != ""
+        application, userid, password = values
+        encrypted_password = encrypt_password(password, self.key)
         try:
             self.cursor.execute(f"""
                 INSERT INTO {self.PASSWORD_TABLE_NAME} (application, userid, password)
                 VALUES (?, ?, ?)
-            """, values)
+            """, (application, userid, encrypted_password))
             self.conn.commit()
         except sqlite3.Error as e:
-            print(f"Error during insertion: {e}")
-            raise RuntimeError("An error occurred while inserting data.")
+            raise RuntimeError(f"Erreur lors de l'insertion : {e}")
 
-    def delete_entry_by_id(self, entry_id: str):
-        assert entry_id != ""
+    def delete_entry_by_app_and_user(self, application: str, userid: str):
         try:
             self.cursor.execute(f"""
-                DELETE FROM {self.PASSWORD_TABLE_NAME}
-                WHERE id = ?
-            """, (entry_id,))
+                SELECT id FROM {self.PASSWORD_TABLE_NAME}
+                WHERE application = ? AND userid = ?
+            """, (application, userid))
+            result = self.cursor.fetchone()
+
+            if result is None:
+                raise ValueError(f"Aucune entrée trouvée pour '{application}' avec l'utilisateur '{userid}'.")
+
+            self.cursor.execute(f"""
+                DELETE FROM {self.PASSWORD_TABLE_NAME} WHERE id = ?
+            """, (result[0],))
             self.conn.commit()
         except sqlite3.Error as e:
-            raise RuntimeError("An error occurred while deleting the entry.")
+            raise RuntimeError(f"Erreur base de données : {e}")
+        except ValueError as e:
+            raise e
