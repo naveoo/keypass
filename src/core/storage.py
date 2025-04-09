@@ -38,6 +38,7 @@ class Database:
             raise RuntimeError("An error occurred while fetching applications.")
 
     def get_info(self, application: str):
+        assert application != ""
         try:
             self.cursor.execute(f"""
                 SELECT userid, password FROM {self.PASSWORD_TABLE_NAME}
@@ -49,6 +50,9 @@ class Database:
             raise RuntimeError("An error occurred while fetching the information.")
 
     def insert(self, values: tuple):
+        for value in values:
+            assert type(value) == str
+            assert value != ""
         try:
             self.cursor.execute(f"""
                 INSERT INTO {self.PASSWORD_TABLE_NAME} (application, userid, password)
@@ -59,7 +63,8 @@ class Database:
             print(f"Error during insertion: {e}")
             raise RuntimeError("An error occurred while inserting data.")
 
-    def delete_entry_by_id(self, entry_id: int):
+    def delete_entry_by_id(self, entry_id: str):
+        assert entry_id != ""
         try:
             self.cursor.execute(f"""
                 DELETE FROM {self.PASSWORD_TABLE_NAME}

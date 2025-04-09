@@ -23,13 +23,13 @@ def build_readable_password(length: int):
         raise RuntimeError("An error occurred while building a readable password.")
 
 def build_random_password(length: int, character_flags: list):
-    try:
-        assert length >= PASSWORD_MIN_SIZE, f"Password length must be at least {PASSWORD_MIN_SIZE}."
-        assert length <= PASSWORD_MAX_SIZE, f"Password length must not exceed {PASSWORD_MAX_SIZE}."
-        assert len(character_flags) == 3, "Character flags must be a list of 3 booleans."
-        for flag in character_flags:
-            assert isinstance(flag, bool), "Each character flag must be a boolean."
+    assert length >= PASSWORD_MIN_SIZE, f"Password length must be at least {PASSWORD_MIN_SIZE}."
+    assert length <= PASSWORD_MAX_SIZE, f"Password length must not exceed {PASSWORD_MAX_SIZE}."
+    assert len(character_flags) == 3, "Character flags must be a list of 3 booleans."
+    for flag in character_flags:
+        assert isinstance(flag, bool), "Each character flag must be a boolean."
 
+    try:
         pool = ""
         if character_flags[0]:
             pool += ascii_letters
@@ -40,12 +40,18 @@ def build_random_password(length: int, character_flags: list):
 
         if not pool:
             raise ValueError("Character pool is empty due to flags configuration.")
-        
+
         return ''.join(choice(pool) for _ in range(length))
-    except AssertionError as e:
+    except ValueError as e:
+        print(f"ValueError: {e}")
+        raise RuntimeError("Invalid input for random password generation.")
+    
+    except ValueError as e:
+        print(f"ValueError: {e}")
         raise RuntimeError("Invalid input for random password generation.")
     except Exception as e:
-        raise RuntimeError("An error occurred while building a random password.")
+        print(f"Unexpected error: {e}")
+        raise RuntimeError("An unexpected error occurred while generating a password.")
 
 def generate_password(length: int = PASSWORD_MIN_SIZE, character_flags: list = [True, True, True], readable: bool = False):
     try:

@@ -54,13 +54,13 @@ def test_generate_password_random():
     assert any(c.isalpha() for c in pw)
 
 def test_invalid_lengths():
-    with pytest.raises(AssertionError):
+    with pytest.raises(AssertionError, match=f"Password length must be at least {PASSWORD_MIN_SIZE}."):
         build_random_password(PASSWORD_MIN_SIZE - 1, [True, True, True])
-    with pytest.raises(AssertionError):
-        build_readable_password(PASSWORD_MAX_SIZE + 1)
+    with pytest.raises(AssertionError, match=f"Password length must not exceed {PASSWORD_MAX_SIZE}."):
+        build_random_password(PASSWORD_MAX_SIZE + 1, [True, True, True])
 
 def test_invalid_flags():
-    with pytest.raises(AssertionError):
+    with pytest.raises(AssertionError, match="Each character flag must be a boolean."):
         build_random_password(PASSWORD_MIN_SIZE, [1, 0, 0])
-    with pytest.raises(AssertionError):
-        generate_password(character_flags=[True, False])
+    with pytest.raises(AssertionError, match="Character flags must be a list of 3 booleans."):
+        build_random_password(PASSWORD_MIN_SIZE, [True, True])
