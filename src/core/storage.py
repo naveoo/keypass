@@ -23,13 +23,11 @@ class Database:
             """)
             self.conn.commit()
         except sqlite3.Error as e:
-            print(f"Error during database initialization: {e}")
             raise RuntimeError("An error occurred while initializing the database.")
 
     def __del__(self):
         if hasattr(self, 'conn') and self.conn:
             self.conn.close()
-            print("Database connection closed.")
 
     def get_applications(self):
         try:
@@ -37,7 +35,6 @@ class Database:
             rows = self.cursor.fetchall()
             return [row[0] for row in rows]
         except sqlite3.Error as e:
-            print(f"Error retrieving applications: {e}")
             raise RuntimeError("An error occurred while fetching applications.")
 
     def get_info(self, application: str):
@@ -49,7 +46,6 @@ class Database:
             rows = self.cursor.fetchall()
             return rows
         except sqlite3.Error as e:
-            print(f"Error retrieving information for application '{application}': {e}")
             raise RuntimeError("An error occurred while fetching the information.")
 
     def insert(self, values: tuple):
@@ -62,6 +58,7 @@ class Database:
         except sqlite3.Error as e:
             print(f"Error during insertion: {e}")
             raise RuntimeError("An error occurred while inserting data.")
+
     def delete_entry_by_id(self, entry_id: int):
         try:
             self.cursor.execute(f"""
@@ -69,7 +66,5 @@ class Database:
                 WHERE id = ?
             """, (entry_id,))
             self.conn.commit()
-            print(f"Entrée avec l'id {entry_id} supprimée avec succès.")
         except sqlite3.Error as e:
-            print(f"Erreur lors de la suppression de l'entrée avec l'id {entry_id} : {e}")
-            raise RuntimeError("Une erreur est survenue lors de la suppression de l'entrée.")
+            raise RuntimeError("An error occurred while deleting the entry.")
