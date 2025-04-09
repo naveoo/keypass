@@ -1,69 +1,75 @@
 import sqlite3
-from dotenv import load_dotenv
-from os import getenv
 from pathlib import Path
-from re import match
 
-load_dotenv()
+class Database:
+    def __init__(self):
+        BASE_DIR = Path(__file__).resolve().parent.parent
+        self.DB_PATH = BASE_DIR / "db" / "database.db"
+        self.PASSWORD_TABLE_NAME = "passwords"
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / "db" / "database.db"
-PASSWORD_TABLE_NAME = getenv("PASSWORD_TABLE_NAME")
-if not match(r"^\w+$", PASSWORD_TABLE_NAME):
-    raise ValueError("Invalid table name")
+        if not self.DB_PATH.parent.exists():
+            self.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-def init_cursor():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    return conn, cursor
+        try:
+            self.conn = sqlite3.connect(self.DB_PATH)
+            self.cursor = self.conn.cursor()
+            self.cursor.execute(f"""
+                CREATE TABLE IF NOT EXISTS {self.PASSWORD_TABLE_NAME} (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    application TEXT NOT NULL,
+                    userid TEXT NOT NULL,
+                    password TEXT NOT NULL
+                )
+            """)
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error during database initialization: {e}")
+            raise RuntimeError("An error occurred while initializing the database.")
 
-def init_database():
-    conn, cursor = init_cursor()
-    try:
-        cursor.execute(f"""
-            CREATE TABLE IF NOT EXISTS {PASSWORD_TABLE_NAME} (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                application TEXT NOT NULL,
-                userid TEXT NOT NULL,
-                password TEXT NOT NULL
-            )
-        """)
-        conn.commit()
-    finally:
-        conn.close()
+    def __del__(self):
+        if hasattr(self, 'conn') and self.conn:
+            self.conn.close()
+            print("Database connection closed.")
 
-def insert(values:tuple):
-    assert len(values) == 3
-    for value in values:
-        assert value != ""
-    
-    conn, cursor = init_cursor()
-    try:
-        cursor.execute(f"""
-            INSERT INTO {PASSWORD_TABLE_NAME} (application, userid, password)
-            VALUES (?, ?, ?)
-        """, values)
-        conn.commit()
-    finally:
-        conn.close()
+    def get_applications(self):
+        try:
+            self.cursor.execute(f"SELECT application FROM {self.PASSWORD_TABLE_NAME}")
+            rows = self.cursor.fetchall()
+            return [row[0] for row in rows]
+        except sqlite3.Error as e:
+            print(f"Error retrieving applications: {e}")
+            raise RuntimeError("An error occurred while fetching applications.")
 
-def get_applications():
-    conn, cursor = init_cursor()
-    try:
-        cursor.execute(f"SELECT application FROM {PASSWORD_TABLE_NAME}")
-        rows = cursor.fetchall()
-        return [row[0] for row in rows]
-    finally:
-        conn.close()
+    def get_info(self, application: str):
+        try:
+            self.cursor.execute(f"""
+                SELECT userid, password FROM {self.PASSWORD_TABLE_NAME}
+                WHERE application = ?
+            """, (application,))
+            rows = self.cursor.fetchall()
+            return rows
+        except sqlite3.Error as e:
+            print(f"Error retrieving information for application '{application}': {e}")
+            raise RuntimeError("An error occurred while fetching the information.")
 
-def get_info(application:str):
-    conn, cursor = init_cursor()
-    try:
-        cursor.execute(f"""
-            SELECT userid, password FROM {PASSWORD_TABLE_NAME}
-            WHERE application = ?
-        """, (application,))
-        rows = cursor.fetchall()
-        return rows
-    finally:
-        conn.close()
+    def insert(self, values: tuple):
+        try:
+            self.cursor.execute(f"""
+                INSERT INTO {self.PASSWORD_TABLE_NAME} (application, userid, password)
+                VALUES (?, ?, ?)
+            """, values)
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error during insertion: {e}")
+            raise RuntimeError("An error occurred while inserting data.")
+    def delete_entry_by_id(self, entry_id: int):
+        try:
+            self.cursor.execute(f"""
+                DELETE FROM {self.PASSWORD_TABLE_NAME}
+                WHERE id = ?
+            """, (entry_id,))
+            self.conn.commit()
+            print(f"Entrée avec l'id {entry_id} supprimée avec succès.")
+        except sqlite3.Error as e:
+            print(f"Erreur lors de la suppression de l'entrée avec l'id {entry_id} : {e}")
+            raise RuntimeError("Une erreur est survenue lors de la suppression de l'entrée.")
