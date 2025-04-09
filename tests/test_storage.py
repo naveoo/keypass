@@ -1,7 +1,6 @@
 from rich import print
 import pytest
-import sqlite3
-from src.core.storage import Database  # Adapter l'import à ta structure de projet
+from src.core.storage import Database
 
 @pytest.fixture
 def db_instance():
