@@ -6,7 +6,6 @@ from src.core.password_generator import PASSWORD_MIN_SIZE, PASSWORD_MAX_SIZE
 
 
 class PasswordGeneratorFrame(wx.Dialog):
-    """Dialogue de génération de mot de passe sécurisé."""
 
     def __init__(self, parent):
         super().__init__(parent, title="Générateur de mot de passe", size=(420, 380))
@@ -14,7 +13,6 @@ class PasswordGeneratorFrame(wx.Dialog):
         panel = wx.Panel(self)
         vbox = wx.BoxSizer(wx.VERTICAL)
 
-        # Longueur
         self.length_label = wx.StaticText(
             panel, label=f"Longueur ({PASSWORD_MIN_SIZE}–{PASSWORD_MAX_SIZE}) :"
         )
@@ -25,14 +23,12 @@ class PasswordGeneratorFrame(wx.Dialog):
             max=PASSWORD_MAX_SIZE,
         )
 
-        # Options
         self.include_uppercase = wx.CheckBox(panel, label="Inclure des majuscules")
         self.include_uppercase.SetValue(True)
         self.include_digits = wx.CheckBox(panel, label="Inclure des chiffres")
         self.include_digits.SetValue(True)
         self.include_symbols = wx.CheckBox(panel, label="Inclure des symboles")
 
-        # Bouton et résultat
         self.generate_button = wx.Button(panel, label="Générer")
         self.generate_button.Bind(wx.EVT_BUTTON, self.on_generate)
 
@@ -47,7 +43,6 @@ class PasswordGeneratorFrame(wx.Dialog):
         self.copy_button.Bind(wx.EVT_BUTTON, self.on_copy)
         self.copy_button.Disable()
 
-        # Layout
         vbox.Add(self.length_label, flag=wx.EXPAND | wx.ALL, border=10)
         vbox.Add(self.length_input, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=10)
         vbox.Add(self.include_uppercase, flag=wx.EXPAND | wx.ALL, border=8)
@@ -60,14 +55,11 @@ class PasswordGeneratorFrame(wx.Dialog):
         panel.SetSizer(vbox)
 
     def on_generate(self, event):
-        """Génère un mot de passe avec les options sélectionnées."""
         length = self.length_input.GetValue()
         include_upper = self.include_uppercase.IsChecked()
         include_dig = self.include_digits.IsChecked()
         include_sym = self.include_symbols.IsChecked()
-
-        # Construire le pool de caractères
-        pool = ascii_lowercase  # Toujours inclure les minuscules
+        pool = ascii_lowercase
         required: list[str] = [choice(ascii_lowercase)]
 
         if include_upper:
@@ -80,13 +72,10 @@ class PasswordGeneratorFrame(wx.Dialog):
             pool += punctuation
             required.append(choice(punctuation))
 
-        # Remplir le reste
         remaining = length - len(required)
         if remaining < 0:
             remaining = 0
         password_chars = required + [choice(pool) for _ in range(remaining)]
-
-        # Mélange sécurisé (Fisher-Yates avec secrets)
         from secrets import randbelow
         for i in range(len(password_chars) - 1, 0, -1):
             j = randbelow(i + 1)
@@ -97,7 +86,6 @@ class PasswordGeneratorFrame(wx.Dialog):
         self.copy_button.Enable()
 
     def on_copy(self, event):
-        """Copie le mot de passe dans le presse-papier."""
         password = self.password_display.GetValue()
         if password and wx.TheClipboard.Open():
             wx.TheClipboard.SetData(wx.TextDataObject(password))

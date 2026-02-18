@@ -4,7 +4,6 @@ from src.core.utils import evaluate_password_strength, get_strength_label
 
 
 class SecurityCheckerFrame(wx.Dialog):
-    """Dialogue d'analyse de la sécurité d'un mot de passe."""
 
     COLORS = {
         5: wx.Colour(0, 150, 0),    # Vert foncé
@@ -12,7 +11,7 @@ class SecurityCheckerFrame(wx.Dialog):
         3: wx.Colour(200, 150, 0),   # Orange
         2: wx.Colour(200, 100, 0),   # Orange foncé
     }
-    DEFAULT_COLOR = wx.Colour(200, 0, 0)  # Rouge
+    DEFAULT_COLOR = wx.Colour(200, 0, 0)
 
     def __init__(self, parent, password: str):
         super().__init__(parent, title="Vérification de la sécurité", size=(400, 200))
@@ -30,7 +29,6 @@ class SecurityCheckerFrame(wx.Dialog):
         color = self.COLORS.get(score, self.DEFAULT_COLOR)
         self.result_text.SetForegroundColour(color)
 
-        # Barre de progression visuelle
         self.gauge = wx.Gauge(panel, range=5, size=(-1, 20))
         self.gauge.SetValue(score)
 
@@ -40,7 +38,6 @@ class SecurityCheckerFrame(wx.Dialog):
         vbox.Add(self.gauge, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=15)
         vbox.Add(score_text, flag=wx.ALIGN_CENTER | wx.ALL, border=10)
 
-        # Bouton fermer
         close_btn = wx.Button(panel, id=wx.ID_CLOSE, label="Fermer")
         close_btn.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(wx.ID_CLOSE))
         vbox.Add(close_btn, flag=wx.ALIGN_CENTER | wx.BOTTOM, border=10)

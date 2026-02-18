@@ -3,8 +3,6 @@ from src.core.crypto import get_db_path, encrypt_password, decrypt_password
 
 
 class Database:
-    """Gestionnaire de la base de données des mots de passe."""
-
     TABLE_NAME = "passwords"
 
     def __init__(self, derived_key: bytes):
@@ -12,12 +10,7 @@ class Database:
         self._db_path = get_db_path()
         self._connect()
 
-    # ------------------------------------------------------------------
-    # Connexion & cycle de vie
-    # ------------------------------------------------------------------
-
     def _connect(self) -> None:
-        """Ouvre la connexion et crée la table si nécessaire."""
         try:
             self.conn = sqlite3.connect(str(self._db_path))
             self.cursor = self.conn.cursor()
@@ -36,7 +29,6 @@ class Database:
             )
 
     def close(self) -> None:
-        """Ferme la connexion à la base de données."""
         if hasattr(self, "conn") and self.conn:
             self.conn.close()
             self.conn = None
@@ -44,12 +36,7 @@ class Database:
     def __del__(self):
         self.close()
 
-    # ------------------------------------------------------------------
-    # Lecture
-    # ------------------------------------------------------------------
-
     def get_applications(self) -> list[str]:
-        """Retourne la liste des applications enregistrées (sans doublon)."""
         try:
             self.cursor.execute(
                 f"SELECT DISTINCT application FROM {self.TABLE_NAME}"
@@ -59,7 +46,6 @@ class Database:
             raise RuntimeError(f"Erreur lors de la récupération des applications : {e}")
 
     def get_info(self, application: str) -> list[tuple[str, str]]:
-        """Retourne les (userid, mot_de_passe_déchiffré) pour une application."""
         try:
             self.cursor.execute(
                 f"SELECT userid, password FROM {self.TABLE_NAME} WHERE application = ?",
@@ -73,7 +59,6 @@ class Database:
             raise RuntimeError(f"Erreur de déchiffrement : {e}")
 
     def get_users_for_application(self, application: str) -> list[str]:
-        """Retourne les utilisateurs distincts pour une application."""
         try:
             self.cursor.execute(
                 f"SELECT DISTINCT userid FROM {self.TABLE_NAME} WHERE application = ?",
@@ -83,12 +68,7 @@ class Database:
         except sqlite3.Error as e:
             raise RuntimeError(f"Erreur lors de la récupération des utilisateurs : {e}")
 
-    # ------------------------------------------------------------------
-    # Écriture
-    # ------------------------------------------------------------------
-
     def insert(self, application: str, userid: str, password: str) -> None:
-        """Insère un nouveau mot de passe chiffré."""
         encrypted_password = encrypt_password(password, self.key)
         try:
             self.cursor.execute(
@@ -100,7 +80,6 @@ class Database:
             raise RuntimeError(f"Erreur lors de l'insertion : {e}")
 
     def delete_entry_by_app_and_user(self, application: str, userid: str) -> None:
-        """Supprime une entrée par application et utilisateur."""
         try:
             self.cursor.execute(
                 f"SELECT id FROM {self.TABLE_NAME} WHERE application = ? AND userid = ?",

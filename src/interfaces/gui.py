@@ -15,7 +15,6 @@ from src.interfaces.security_checker_ui import SecurityCheckerFrame
 
 
 def resource_path(relative_path: str) -> str:
-    """Résout un chemin relatif en chemin absolu (compatible PyInstaller)."""
     try:
         base_path = sys._MEIPASS
     except AttributeError:
@@ -23,13 +22,7 @@ def resource_path(relative_path: str) -> str:
     return os.path.join(base_path, relative_path)
 
 
-# ---------------------------------------------------------------------------
-# Fenêtre de connexion
-# ---------------------------------------------------------------------------
-
 class LoginFrame(wx.Frame):
-    """Fenêtre de connexion avec mot de passe maître."""
-
     def __init__(self):
         super().__init__(None, title="Connexion sécurisée", size=(350, 200))
         panel = wx.Panel(self)
@@ -45,7 +38,6 @@ class LoginFrame(wx.Frame):
         self.error_text = wx.StaticText(panel, label="", style=wx.ALIGN_CENTER)
         self.error_text.SetForegroundColour(wx.RED)
 
-        # Info première utilisation
         if is_first_run():
             info = wx.StaticText(
                 panel,
@@ -74,7 +66,6 @@ class LoginFrame(wx.Frame):
             key = derive_key(password)
 
             if is_first_run():
-                # Premier lancement : enregistrer le mot de passe maître
                 store_master_verification(key)
             elif not verify_master_password(key):
                 self.error_text.SetLabel("Mot de passe invalide.")
@@ -96,12 +87,7 @@ class LoginFrame(wx.Frame):
             self.password_input.SetValue("")
 
 
-# ---------------------------------------------------------------------------
-# Fenêtre principale
-# ---------------------------------------------------------------------------
-
 class MainFrame(wx.Frame):
-    """Fenêtre principale du gestionnaire de mots de passe."""
 
     def __init__(self, parent, db: Database):
         super().__init__(parent, title="Gestionnaire de mots de passe", size=(600, 500))
@@ -110,7 +96,7 @@ class MainFrame(wx.Frame):
         try:
             self.SetIcon(wx.Icon(resource_path("logo.ico")))
         except Exception:
-            pass  # L'icône n'est pas critique
+            pass
 
         panel = wx.Panel(self)
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -118,7 +104,6 @@ class MainFrame(wx.Frame):
         self.app_list = wx.ListBox(panel, size=(500, 200))
         self.load_apps()
 
-        # Boutons
         buttons = [
             ("Ajouter un mot de passe", self.on_add_password),
             ("Générer un mot de passe", self.on_generate_password),
@@ -137,12 +122,10 @@ class MainFrame(wx.Frame):
         self.Centre()
 
     def load_apps(self):
-        """Recharge la liste des applications depuis la base."""
         applications = self.db.get_applications()
         self.app_list.Set(applications)
 
     def on_add_password(self, event):
-        """Ajoute un mot de passe via une boîte de dialogue."""
         dialog = wx.TextEntryDialog(
             self,
             "Format : application, utilisateur, mot de passe",
@@ -170,13 +153,11 @@ class MainFrame(wx.Frame):
         dialog.Destroy()
 
     def on_generate_password(self, event):
-        """Ouvre le générateur de mot de passe."""
         dialog = PasswordGeneratorFrame(self)
         dialog.ShowModal()
         dialog.Destroy()
 
     def on_delete_password(self, event):
-        """Supprime une entrée sélectionnée."""
         selected_app = self.app_list.GetStringSelection()
         if not selected_app:
             wx.MessageBox(
@@ -186,7 +167,6 @@ class MainFrame(wx.Frame):
             )
             return
 
-        # Afficher les utilisateurs disponibles
         users = self.db.get_users_for_application(selected_app)
         if not users:
             wx.MessageBox("Aucun utilisateur trouvé.", "Info", wx.OK | wx.ICON_INFORMATION)
@@ -215,7 +195,6 @@ class MainFrame(wx.Frame):
         dialog.Destroy()
 
     def on_show_password(self, event):
-        """Affiche le mot de passe sélectionné."""
         selected_app = self.app_list.GetStringSelection()
         if not selected_app:
             wx.MessageBox(
@@ -230,7 +209,6 @@ class MainFrame(wx.Frame):
             wx.MessageBox("Aucune donnée trouvée.", "Info", wx.OK | wx.ICON_INFORMATION)
             return
 
-        # Afficher toutes les entrées pour cette application
         message = "\n".join(
             f"Utilisateur : {uid}\nMot de passe : {pwd}\n"
             for uid, pwd in data
@@ -238,7 +216,6 @@ class MainFrame(wx.Frame):
         wx.MessageBox(message, f"Informations — {selected_app}", wx.OK | wx.ICON_INFORMATION)
 
     def on_check_security(self, event):
-        """Vérifie la sécurité du mot de passe sélectionné."""
         selected_app = self.app_list.GetStringSelection()
         if not selected_app:
             wx.MessageBox(

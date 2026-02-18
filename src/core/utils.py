@@ -1,6 +1,5 @@
 import re
 
-# Mots de passe courants à rejeter immédiatement
 _COMMON_PASSWORDS = frozenset({
     "123456", "password", "123456789", "12345", "qwerty", "abc123",
     "password1", "111111", "1234567", "iloveyou", "admin", "letmein",
@@ -10,20 +9,6 @@ _COMMON_PASSWORDS = frozenset({
 
 
 def evaluate_password_strength(password: str) -> int:
-    """Évalue la force d'un mot de passe sur une échelle de 0 à 5.
-
-    Critères :
-    - Longueur >= 12 : +1 point (>= 8 et < 12 : +0 point bonus, mais pas pénalisé)
-    - Longueur >= 16 : +1 point supplémentaire
-    - Contient des majuscules : +1
-    - Contient des minuscules : +1
-    - Contient des chiffres : +1
-    - Contient des caractères spéciaux : +1
-    - Mot de passe courant : score forcé à 0
-
-    Returns:
-        Score entier entre 0 et 5.
-    """
     if password in _COMMON_PASSWORDS:
         return 0
 
@@ -47,7 +32,6 @@ def evaluate_password_strength(password: str) -> int:
 
 
 def get_strength_label(score: int) -> str:
-    """Retourne un libellé lisible pour un score de force de mot de passe."""
     labels = {
         5: "Mot de passe très sécurisé !",
         4: "Mot de passe sécurisé.",
