@@ -1,55 +1,71 @@
 from secrets import choice
-from string import ascii_letters, digits, punctuation
+from string import ascii_lowercase, ascii_uppercase, digits, punctuation
 from dotenv import load_dotenv
 from os import getenv
 
 load_dotenv()
+
 try:
-    PASSWORD_MIN_SIZE = int(getenv("PASSWORD_MIN_SIZE"))
-    PASSWORD_MAX_SIZE = int(getenv("PASSWORD_MAX_SIZE"))
+    PASSWORD_MIN_SIZE = int(getenv("PASSWORD_MIN_SIZE", "12"))
+    PASSWORD_MAX_SIZE = int(getenv("PASSWORD_MAX_SIZE", "50"))
 except (TypeError, ValueError) as e:
-    raise RuntimeError(f"Error loading password size constraints from environment variables: {e}")
+    raise RuntimeError(
+        f"Erreur lors du chargement des contraintes de taille de mot de passe : {e}"
+    )
 
-def build_random_password(length: int, character_flags: list):
-    assert length >= PASSWORD_MIN_SIZE, f"Password length must be at least {PASSWORD_MIN_SIZE}."
-    assert length <= PASSWORD_MAX_SIZE, f"Password length must not exceed {PASSWORD_MAX_SIZE}."
-    assert len(character_flags) == 3, "Character flags must be a list of 3 booleans."
-    for flag in character_flags:
-        assert isinstance(flag, bool), "Each character flag must be a boolean."
 
-    try:
-        pool = ""
-        if character_flags[0]:
-            pool += ascii_letters
-        if character_flags[1]:
-            pool += digits
-        if character_flags[2]:
-            pool += punctuation
+def generate_password(
+    length: int = 12,
+    include_letters: bool = True,
+    include_digits: bool = True,
+    include_symbols: bool = True,
+) -> str:
+    """Génère un mot de passe aléatoire sécurisé.
 
-        if not pool:
-            raise ValueError("Character pool is empty due to flags configuration.")
+    Args:
+        length: Longueur du mot de passe (entre PASSWORD_MIN_SIZE et PASSWORD_MAX_SIZE).
+        include_letters: Inclure des lettres (majuscules et minuscules).
+        include_digits: Inclure des chiffres.
+        include_symbols: Inclure des caractères spéciaux.
 
-        return ''.join(choice(pool) for _ in range(length))
-    except ValueError as e:
-        print(f"ValueError: {e}")
-        raise RuntimeError("Invalid input for random password generation.")
-    
-    except ValueError as e:
-        print(f"ValueError: {e}")
-        raise RuntimeError("Invalid input for random password generation.")
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        raise RuntimeError("An unexpected error occurred while generating a password.")
+    Returns:
+        Le mot de passe généré.
 
-def generate_password(length: int = PASSWORD_MIN_SIZE, character_flags: list = [True, True, True], readable: bool = False):
-    try:
-        assert length >= PASSWORD_MIN_SIZE, f"Password length must be at least {PASSWORD_MIN_SIZE}."
-        assert length <= PASSWORD_MAX_SIZE, f"Password length must not exceed {PASSWORD_MAX_SIZE}."
-        assert len(character_flags) == 3, "Character flags must be a list of 3 booleans."
-        for flag in character_flags:
-            assert isinstance(flag, bool), "Each character flag must be a boolean."
-        
-    except AssertionError as e:
-        raise RuntimeError("Invalid input for password generation.")
-    except Exception as e:
-        raise RuntimeError("An error occurred while generating a password.")
+    Raises:
+        ValueError: Si les paramètres sont invalides.
+    """
+    if length < PASSWORD_MIN_SIZE:
+        raise ValueError(f"La longueur doit être d'au moins {PASSWORD_MIN_SIZE}.")
+    if length > PASSWORD_MAX_SIZE:
+        raise ValueError(f"La longueur ne doit pas dépasser {PASSWORD_MAX_SIZE}.")
+
+    pool = ""
+    required_chars: list[str] = []
+
+    if include_letters:
+        pool += ascii_lowercase + ascii_uppercase
+        # Garantir au moins une majuscule et une minuscule
+        required_chars.append(choice(ascii_uppercase))
+        required_chars.append(choice(ascii_lowercase))
+    if include_digits:
+        pool += digits
+        required_chars.append(choice(digits))
+    if include_symbols:
+        pool += punctuation
+        required_chars.append(choice(punctuation))
+
+    if not pool:
+        raise ValueError("Au moins un type de caractère doit être sélectionné.")
+
+    # Remplir le reste avec des caractères aléatoires du pool
+    remaining_length = length - len(required_chars)
+    password_chars = required_chars + [choice(pool) for _ in range(remaining_length)]
+
+    # Mélanger pour ne pas avoir les caractères requis toujours au début
+    # On utilise Fisher-Yates avec secrets pour un mélange cryptographiquement sûr
+    from secrets import randbelow
+    for i in range(len(password_chars) - 1, 0, -1):
+        j = randbelow(i + 1)
+        password_chars[i], password_chars[j] = password_chars[j], password_chars[i]
+
+    return "".join(password_chars)

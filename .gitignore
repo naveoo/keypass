@@ -1,2 +1,38 @@
-src/interfaces/__pycache__/
-src/core/__pycache__/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Distribution / Build
+build/
+dist/
+*.spec
+*.egg-info/
+*.egg
+
+# Database (ne pas versionner les données locales)
+src/db/*.db
+
+# Crypto secrets (ne JAMAIS versionner)
+src/core/salt.bin
+src/core/verify.bin
+
+# OS
+Thumbs.db
+.DS_Store

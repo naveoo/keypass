@@ -1,44 +1,48 @@
 import wx
-import re
+
+from src.core.utils import evaluate_password_strength, get_strength_label
+
 
 class SecurityCheckerFrame(wx.Dialog):
-    def __init__(self, parent, password):
-        super().__init__(parent, title="Vérification de la sécurité", size=(400, 250))
+    """Dialogue d'analyse de la sécurité d'un mot de passe."""
 
-        self.panel = wx.Panel(self)
+    COLORS = {
+        5: wx.Colour(0, 150, 0),    # Vert foncé
+        4: wx.Colour(100, 180, 0),   # Vert clair
+        3: wx.Colour(200, 150, 0),   # Orange
+        2: wx.Colour(200, 100, 0),   # Orange foncé
+    }
+    DEFAULT_COLOR = wx.Colour(200, 0, 0)  # Rouge
+
+    def __init__(self, parent, password: str):
+        super().__init__(parent, title="Vérification de la sécurité", size=(400, 200))
+
+        panel = wx.Panel(self)
         vbox = wx.BoxSizer(wx.VERTICAL)
 
-        self.password = password
-        self.result_text = wx.StaticText(self.panel, label="")
-        
-        self.analyze_password()
+        score = evaluate_password_strength(password)
+        label = get_strength_label(score)
 
-        vbox.Add(self.result_text, flag=wx.EXPAND | wx.ALL, border=10)
-        self.panel.SetSizer(vbox)
+        self.result_text = wx.StaticText(panel, label=label)
+        self.result_text.SetFont(
+            wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        )
+        color = self.COLORS.get(score, self.DEFAULT_COLOR)
+        self.result_text.SetForegroundColour(color)
 
-    def analyze_password(self):
-        score = self.get_security_score(self.password)
-        if score == 5:
-            self.result_text.SetLabel("Mot de passe très sécurisé !")
-        elif score == 4:
-            self.result_text.SetLabel("Mot de passe sécurisé.")
-        elif score == 3:
-            self.result_text.SetLabel("Mot de passe moyen.")
-        elif score == 2:
-            self.result_text.SetLabel("Mot de passe faible.")
-        else:
-            self.result_text.SetLabel("Mot de passe très faible.")
+        # Barre de progression visuelle
+        self.gauge = wx.Gauge(panel, range=5, size=(-1, 20))
+        self.gauge.SetValue(score)
 
-    def get_security_score(self, password):
-        score = 0
-        if len(password) >= 8:
-            score += 1
-        if re.search(r"[A-Z]", password):
-            score += 1
-        if re.search(r"[a-z]", password):
-            score += 1
-        if re.search(r"\d", password):
-            score += 1
-        if re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
-            score += 1
-        return score
+        score_text = wx.StaticText(panel, label=f"Score : {score}/5")
+
+        vbox.Add(self.result_text, flag=wx.EXPAND | wx.ALL, border=15)
+        vbox.Add(self.gauge, flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=15)
+        vbox.Add(score_text, flag=wx.ALIGN_CENTER | wx.ALL, border=10)
+
+        # Bouton fermer
+        close_btn = wx.Button(panel, id=wx.ID_CLOSE, label="Fermer")
+        close_btn.Bind(wx.EVT_BUTTON, lambda e: self.EndModal(wx.ID_CLOSE))
+        vbox.Add(close_btn, flag=wx.ALIGN_CENTER | wx.BOTTOM, border=10)
+
+        panel.SetSizer(vbox)

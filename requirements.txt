@@ -1,0 +1,3 @@
+wxPython
+cryptography
+python-dotenv
